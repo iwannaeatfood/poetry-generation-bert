@@ -1,0 +1,3 @@
+paddlenlp
+paddlepaddle-gpu
+paddle
