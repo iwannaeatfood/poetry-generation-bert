@@ -1,99 +1,36 @@
-# 毕业设计：中国古典诗词 BERT 模型
+# 毕业设计：基于预训练 BERT 的中国古典诗词生成
 
-本科毕业设计存档，主题为基于 BERT 的中国古典诗词表示与生成。项目在开发过程中经历了三个阶段/版本，此仓库按原始文件夹结构分别保留代码。**这个仓库只是拼图的一块**——训练好的模型权重放在 Google Drive，部分训练数据是公开数据集，需要单独下载。下面的"项目拼图地图"列出了每一块在哪里、怎么拿到，跟着走可以在新设备上完整复现。
+澳门科技大学本科毕业设计（2023.09–2024.05，个人项目）。主题为基于 BERT 的中国古典诗词表示与生成；开发过程中经历三个版本，本仓库按原始目录结构保留各版本代码、论文与答辩材料。
 
-## 我的工作与证据对应（面试速查）
+*Undergraduate thesis (Macau University of Science and Technology, Sep 2023 – May 2024, individual): classical Chinese poetry generation with pre-trained BERT. The repository keeps the code of the three development stages, the thesis and the defence slides.*
 
-个人本科毕业设计（澳门科技大学，2023.09–2024.05），全部为我独立完成。哪里能查到什么：
+## 项目概述
 
-| 想了解 | 看哪里 |
+最终系统（版本三，`毕设/BERT-Poem/`）基于 PaddleNLP 的开源诗歌生成示例代码（`PoemData` / `PoetryBertModel` / `PoetryBertModelLossCriterion` 的结构）改造：以 `bert-base-chinese` 为底座，使用下三角（lower-triangular）注意力掩码实现从左到右的生成；语料按 6:2:2 划分；按诗体分别训练 4 个模型（五言绝句、五言律诗、七言绝句、七言律诗）；训练使用 AdamW、学习率 1e-4、训练 batch 128 / 验证 batch 32、10 个 epoch、序列长度 128，训练时监控 Perplexity；生成时逐字 top-k 采样（`gen.py`，默认 k=2）；配有 Tkinter 图形界面（`creator.py`），可选诗体并输入风格提示词生成。
+
+论文比较了 BERT-CCPoem 与 GPT-2 两种方法的生成效果，答辩 PPT 另介绍了最终实现方案。比较以定性分析为主，论文与答辩中没有定量评测指标表。直接使用 BERT-CCPoem / `bert-base-chinese` 的第一次生成尝试效果不佳（答辩 PPT 中的 "A failed attempt"），之后转向可训练的 Paddle 方案。
+
+## 目录与材料
+
+| 内容 | 位置 |
 |---|---|
-| 背景综述、BERT-CCPoem 与 GPT-2 两种方法的定性对比 | 论文 PDF `毕设/毕业设计-朱彦燕….pdf`（英文，35 页，第 3–4 章） |
-| 最终实现的方案与失败尝试 | 答辩 PPT `毕设/毕设期末.pptx`（2024-05-08） |
-| 最终系统代码（4 个诗体模型 + Tkinter 界面） | `毕设/BERT-Poem/` |
-| 早期探索（BERT-CCPoem 句向量检索、PaddleNLP 流水线） | `Poem-BERT-CCPoem-master/`、`毕设/1.0/` |
+| 论文（英文，35 页）：背景综述、BERT-CCPoem 与 GPT-2 的定性对比 | `毕设/毕业设计-朱彦燕….pdf` |
+| 答辩 PPT（中期、期末，期末为 2024-05-08） | `毕设/毕设中期- PPTMON.pptx`、`毕设/毕设期末.pptx` |
+| 论文草稿 | `毕设/zyy.docx`、`毕设/bishe.docx` |
+| 版本三：最终系统（4 个诗体模型 + Tkinter 界面） | `毕设/BERT-Poem/`（`dataset.py`、`model.py`、`train.py`、`gen.py`、`creator.py`、`test.py`） |
+| 版本二：PaddleNLP 结构化流水线 | `毕设/1.0/`（`1prepare.py` → `5predict.py`，开发笔记 `ideas.md`） |
+| 版本一：BERT-CCPoem 句向量检索探索脚本 | `Poem-BERT-CCPoem-master/` |
 
-**最终系统（版本三）的事实**（来自答辩 PPT 与代码）：基于 PaddleNLP 的开源诗歌生成示例代码（`PoemData` / `PoetryBertModel` / `PoetryBertModelLossCriterion` 的结构）改造，以 `bert-base-chinese` 为底座，用下三角（lower-triangular）注意力掩码让 BERT 做从左到右的生成；语料按 6:2:2 划分；按诗体拆成 4 个模型（五绝/五律/七绝/七律）；训练：AdamW、学习率 1e-4、训练 batch 128 / 验证 batch 32、10 个 epoch、序列长度 128，训练时监控 Perplexity；生成：逐字 top-k 采样（`gen.py`，默认 k=2）；界面：Tkinter。
+## 复现说明
 
-**如实说明的局限**
+**未包含在仓库中的内容：** 4 个训练好的 checkpoint（各约 1.3 GB，分别对应五绝/五律/七绝/七律）、诗体语料（`qijue_all.txt`、`qilv_all.txt`、`wujue_all.txt`、`wulv_all.txt`，网络公开数据集）、BERT-CCPoem 预训练权重（约 160 MB，清华发布）、虚拟环境与安装包。
 
-- 没有定量评测结果：论文和答辩对 BERT-CCPoem 与 GPT-2 只做了定性比较，我在论文 PDF 中没有找到指标表（训练时的 Perplexity 没有作为结果报告）。
-- 系统是在现有 PaddleNLP 示例项目的基础上改造的（答辩 PPT 中称为 "studied projects"，原始链接未记录），不是从零设计的架构；我的工作是改造数据处理、按诗体训练 4 个模型、Tkinter 界面，以及两种方法的对比分析。
-- 直接用 BERT-CCPoem / `bert-base-chinese` 生成的第一次尝试效果不好（答辩 PPT："A failed attempt"）；PPT 列出该尝试未实现的步骤是模型训练、引入注意力机制和优化生成策略。
-
-**可能的面试问题**
-
-- *BERT 不是生成模型，怎么用来写诗？* 用下三角注意力掩码，让每个位置只能看到左边的字，再用语言模型式的交叉熵损失训练，生成时逐字预测下一个字（单向/UniLM 风格）。
-- *为什么训练 4 个模型而不是 1 个？* 四种诗体的句数与字数不同（绝句 4 句、律诗 8 句，每句 5 或 7 字），分开训练可以让每个模型只学一种格式；代价是 4 份 checkpoint。
-- *为什么 BERT-CCPoem 直接生成效果差？* BERT-CCPoem 本身是 BERT 式的表示模型（版本一就是用它做句向量检索），我的第一次尝试没有完成生成模型的训练与解码策略优化（见上）；之后转向可训练的 Paddle 方案。
-- *怎么评价生成质量？* 目前只有人工/定性比较；如果继续做，会加入 Perplexity、押韵与平仄规则命中率，以及人工打分。
-
-## 🧩 项目拼图地图
-
-| 组成部分 | 在哪里 | 怎么拿到 |
-|---|---|---|
-| `Poem-BERT-CCPoem-master/` 探索脚本 | 本仓库 | `git clone` 本仓库即可 |
-| BERT-CCPoem 预训练权重（162MB） | 清华官方发布 | 见下方"版本一"步骤，有直接下载命令 |
-| `毕设/1.0/` 流水线代码 | 本仓库 | `git clone` 本仓库即可 |
-| `毕设/1.0/` 训练数据 | PaddleNLP 内置，自动下载 | 首次运行 `1prepare.py` 时自动获取，无需手动准备 |
-| `毕设/BERT-Poem/` 代码 | 本仓库 | `git clone` 本仓库即可 |
-| 诗体语料（qijue/qilv/wujue/wulv_all.txt） | 网络公开数据集 | **⚠️ 具体来源待补充**——本地已删除（可重新下载），但尚未记录确切链接，需要回忆/找回后补充到这里 |
-| 4 个训练好的 checkpoint（5j/5l/7j/7l，各约1.3GB，共约5.3GB） | Google Drive（私有） | **⚠️ 链接待补充**——上传后请把分享链接发给我，我会更新这里并直接替换掉这行占位 |
-| 论文正文、草稿、答辩 PPT | 本仓库 `毕设/` | `git clone` 本仓库即可 |
-
-## 目录概览与复现步骤
-
-### 版本一：Poem-BERT-CCPoem-master（句向量检索）
-
-以清华大学人工智能研究院自然语言处理与社会人文计算研究中心发布的 **BERT-CCPoem**（在约92.6万首中国古典诗词、893万余句上预训练）为基础，用一批探索性脚本（`0.1.py` ~ `1.6.py`、`gen_.1.py`、`gen_vec_rep.py`）调用该模型做诗句相似度检索实验。原始来源：[THUNLP-AIPoet/BERT-CCPoem](https://github.com/THUNLP-AIPoet/BERT-CCPoem)。
-
-复现步骤：
-1. `pip install torch>=1.2.0 transformers==4.3.3`
-2. 下载并解压预训练权重到 `BERT_CCPoem_v1/` 目录下（与仓库里已有的 config/tokenizer/vocab 放在一起）：
-   ```
-   wget https://thunlp.oss-cn-qingdao.aliyuncs.com/BERT_CCPoem_v1.zip
-   unzip BERT_CCPoem_v1.zip -d Poem-BERT-CCPoem-master/
-   ```
-3. 运行 `gen_vec_rep.py` 或其余探索脚本。
-
-### 版本二：毕设/1.0（PaddleNLP 结构化流水线）
-
-`1prepare.py`（加载 PaddleNLP 内置 poetry 数据集并清洗）→ `2model.py`（基于 `bert-base-chinese` 搭建生成模型）→ `3train.py` → `4evaluate.py` → `5predict.py`，另有开发笔记 `ideas.md`（早期任务构思：问答系统 vs 文本生成方向的比较）。
-
-复现步骤：
-1. `pip install paddlepaddle paddlenlp`（这个版本没有单独的 requirement.txt，依赖是从代码 import 推断的）
-2. **注意**：`2model.py` 里直接引用了 `vocab` 变量但没有定义它——这几个脚本是按顺序在同一个交互式会话里执行的（写作时的思路草稿），不是能各自独立运行的脚本，直接 `python 2model.py` 会报 `NameError`。复现时建议把 5 个文件的内容依次粘贴进同一个 Jupyter/交互式 Python 会话。
-
-### 版本三：毕设/BERT-Poem（分诗体训练，更完整的实现）
-
-代码包括 `dataset.py`（诗歌数据集封装）、`model.py`、`train.py`、`gen.py`（生成逻辑）、`creator.py`（**tkinter 图形界面小程序**，可以选诗体、输入风格提示词，点按钮生成诗句）。四个 checkpoint 分别对应四种诗体：`5j`=五言绝句、`5l`=五言律诗、`7j`=七言绝句、`7l`=七言律诗。
-
-复现步骤：
+**版本三（BERT-Poem）：**
 1. `pip install -r 毕设/BERT-Poem/requirement.txt`
-2. 下载诗体语料（见上方地图，来源待补充），放进 `毕设/BERT-Poem/data/` 目录，文件名保持 `qijue_all.txt`/`qilv_all.txt`/`wujue_all.txt`/`wulv_all.txt`
-3. **用已训练好的模型**：从 Google Drive 下载对应的 `checkpointXX.zip`，直接解压到 `毕设/BERT-Poem/` 目录下——压缩包内部路径已经是代码要求的双层嵌套格式（如 `checkpoint5j/checkpoint5j/final.pdopt`），解压后 `test.py`/`creator.py` 里的 `model.load('./checkpoint5j/checkpoint5j/final')` 可以直接读到。
-4. **从头训练**：`train.py` 目前是写死加载 `qilv_all.txt` 并存到 `./checkpoint7l` 的，训练其他 3 个诗体需要手动改这两处（数据文件名 + `save_dir`），跑 4 次。
-5. 生成诗句：命令行用 `python test.py`，图形界面用 `python creator.py`。
+2. 将四个诗体语料放入 `毕设/BERT-Poem/data/`，文件名保持 `qijue_all.txt`/`qilv_all.txt`/`wujue_all.txt`/`wulv_all.txt`。
+3. 训练：`train.py` 当前写死加载 `qilv_all.txt` 并保存到 `./checkpoint7l`；训练其他三个诗体需要修改这两处（数据文件名与 `save_dir`）。
+4. 生成：命令行 `python test.py`，图形界面 `python creator.py`。模型加载路径为双层嵌套目录，例如 `./checkpoint5j/checkpoint5j/final`。
 
-### 毕设（论文本身）
+**版本二（1.0）：** `pip install paddlepaddle paddlenlp`（没有单独的 requirement 文件）。五个脚本是在同一个交互式会话中依次执行的草稿（例如 `2model.py` 直接使用前一个脚本里的变量 `vocab`，自身没有定义），不能各自独立运行。
 
-- `毕业设计-朱彦燕20098533I0110031.pdf`：最终提交的论文正文。
-- `zyy.docx`：论文完整草稿（约550段落，含图表）。
-- `bishe.docx`：早期提纲/草稿。
-- `毕设中期- PPTMON.pptx`、`毕设期末.pptx`：中期与期末答辩 PPT。
-
-## 未上传到 GitHub 的内容
-
-- **虚拟环境与安装包**：`.venv`、CUDA 工具包安装文件、`VC_redist.x64.exe`——均为环境依赖，按上面复现步骤里的 `pip install` 重新安装即可，本地也已删除这些以腾出磁盘空间。
-- **模型权重与训练 checkpoint**：`pytorch_model.bin`（154MB，见版本一步骤 2 下载）、4 组 PaddlePaddle checkpoint（合计约5.3GB，放在 Google Drive，见上方地图）。
-- **诗体语料**（qijue/qilv/wujue/wulv_all.txt，网络公开数据集）：本地也已删除，具体来源待补充到上方地图里。
-- **压缩包本身**：原始 `BERT-Poem.zip`（4.79GB）——已从中提取出代码（`BERT-Poem_code.zip`）与 4 个 checkpoint（分别打包上传 Google Drive），压缩包内其余内容（IDE 配置、`__pycache__`）不再保留。
-- **一份意外生成的"README.md"**：`毕设/1.0` 原目录下曾有一个 2.5MB 的文件，内容实际是 `.venv` 目录结构的 `tree` 打印输出（并非真正的项目说明），已跳过。
-- IDE 项目配置目录 `.idea`——保留了 `.vscode/1.3.py`（真正的源码文件，虽然位置在 `.vscode` 目录下）。
-
-## 本地磁盘整理记录（E:\learn\毕设）
-
-为腾出磁盘空间，本地对该项目做了以下整理（GitHub 仓库内容不受影响，代码保持原样可浏览）：
-- `毕设/1.0/` 整个文件夹（含 3.4GB 的 `.venv`、640MB CUDA 安装包等）已删除，代码压缩保存为 `毕设/1.0_code.zip`。
-- `毕设/BERT-Poem.zip`（4.79GB）里的代码已提取压缩为 `毕设/BERT-Poem_code.zip`；4 个 checkpoint 已分别打包为 `毕设/checkpoints_for_upload_zips/checkpointXX.zip`，待上传 Google Drive 后即可删除原始大压缩包。
-- `E:\Poem-BERT-CCPoem-master` 未改动，保持原样。
+**版本一：** `pip install torch>=1.2.0 transformers==4.3.3`，下载 [BERT-CCPoem](https://github.com/THUNLP-AIPoet/BERT-CCPoem) 预训练权重并解压到 `Poem-BERT-CCPoem-master/BERT_CCPoem_v1/`，运行 `gen_vec_rep.py` 等脚本。
